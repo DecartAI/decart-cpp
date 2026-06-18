@@ -61,6 +61,15 @@ struct ConnectOptions {
   /// Optional output resolution hint ("720p" or "1080p").
   std::optional<std::string> resolution;
 
+  /// Publish the input track muted, so no frames reach the model until you call
+  /// `RealtimeSession::unmute()`. Use this to pre-warm a connection: the session
+  /// is fully authenticated and the WebRTC media path is established, but nothing
+  /// is transmitted — and no generation is billed — while muted. An idle video
+  /// track still emits keepalive frames over WebRTC, so muting (rather than just
+  /// withholding `captureFrame`) is what keeps a warmed session free. Pair with
+  /// `initialState` to apply the prompt/image during the idle warmup phase.
+  bool startMuted = false;
+
   /// Bound on the signaling handshake (socket open + room join). The LiveKit
   /// media connect manages its own timeout. Default 60s.
   std::chrono::milliseconds connectTimeout{60000};

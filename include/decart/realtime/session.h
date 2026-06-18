@@ -59,6 +59,22 @@ public:
   /// Blocks until acknowledged.
   void setImage(const std::optional<ImageInput>& image, const UpdateOptions& options = {});
 
+  /// Stop transmitting video to the model without tearing down the connection.
+  /// The published track stays live and resumes with `unmute()` — no
+  /// renegotiation. Use this for connection pre-warming: connect (optionally with
+  /// `ConnectOptions::startMuted`), hold the authenticated session idle at no
+  /// generation cost, then `unmute()` and start capturing frames when the user is
+  /// ready. Local operation; `@throws decart::Exception` if the session has
+  /// disconnected.
+  void mute();
+
+  /// Resume transmitting to the model after `mute()` (or after connecting with
+  /// `ConnectOptions::startMuted`). Once unmuted the track sends again —
+  /// including WebRTC keepalive frames — so generation, and billing, can begin
+  /// even before your first `captureFrame`. Unmute only when you are ready to go
+  /// live. `@throws decart::Exception` if the session has disconnected.
+  void unmute();
+
   /// True while the session is connected (state `Connected` or `Generating`).
   bool isConnected() const noexcept;
 

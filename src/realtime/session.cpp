@@ -136,8 +136,29 @@ public:
   // Generation finished; fall back to Connected (a new run re-enters Generating).
   void markGenerationEnded() { transitionIf(ConnectionState::Generating, ConnectionState::Connected); }
 
-  void connectRoom(const RoomInfo& info, const std::shared_ptr<livekit::VideoSource>& source,
-                   int publishFps) {
+  // Stop/resume transmitting the published input track without renegotiation.
+  // Used for connection pre-warming (see ConnectOptions::startMuted). No-op when
+  // there is no published track (e.g. a subscribe-only session).
+  void mute() {
+    std::shared_ptr<livekit::LocalVideoTrack> track;
+    {
+      std::lock_guard<std::mutex> lk(trackMutex_);
+      track = publishedTrack_;
+    }
+    if (track) track->mute();
+  }
+
+  void unmute() {
+    std::shared_ptr<livekit::LocalVideoTrack> track;
+    {
+      std::lock_guard<std::mutex> lk(trackMutex_);
+      track = publishedTrack_;
+    }
+    if (track) track->unmute();
+  }
+
+  void connectRoom(const RoomInfo& info, const std::shared_ptr<livekit::VideoSource>& source, int publishFps,
+                   bool startMuted) {
     room_ = std::make_unique<livekit::Room>();
     room_->setDelegate(this);
 
@@ -157,6 +178,14 @@ public:
       if (!local) throw Exception(Error{ErrorCode::MediaError, "Local participant unavailable"});
 
       auto track = livekit::LocalVideoTrack::createLocalVideoTrack("decart-input", source);
+
+      // Pre-warming: mute BEFORE publishing so no media ever reaches the
+      // inference server until unmute(). An idle WebRTC track emits keepalive
+      // frames (and the source may already be producing), so a track that goes
+      // live unmuted — even briefly — can start generation and billing. Muting
+      // after publish would leave that window open.
+      if (startMuted) track->mute();
+
       livekit::TrackPublishOptions publish;
       publish.source = livekit::TrackSource::SOURCE_CAMERA;
       publish.simulcast = false;
@@ -165,7 +194,17 @@ public:
       encoding.max_framerate = static_cast<double>(publishFps);
       publish.video_encoding = encoding;
       local->publishTrack(track, publish);
-      publishedTrack_ = std::move(track);
+
+      // Re-assert muted state as a guarantee: a muted track stays published and
+      // unmutes later with no renegotiation. This is a no-op if the pre-publish
+      // mute already took effect, and a safety net if it did not register on the
+      // not-yet-published track.
+      if (startMuted) track->mute();
+
+      {
+        std::lock_guard<std::mutex> lk(trackMutex_);
+        publishedTrack_ = std::move(track);
+      }
     }
   }
 
@@ -184,7 +223,10 @@ public:
       room_->disconnect();
       room_.reset();
     }
-    publishedTrack_.reset();
+    {
+      std::lock_guard<std::mutex> lk(trackMutex_);
+      publishedTrack_.reset();
+    }
     setState(ConnectionState::Disconnected);
   }
 
@@ -243,6 +285,7 @@ public:
 
 private:
   std::unique_ptr<livekit::Room> room_;
+  mutable std::mutex trackMutex_;
   std::shared_ptr<livekit::LocalVideoTrack> publishedTrack_;
 
   mutable std::mutex stateMutex_;
@@ -349,6 +392,23 @@ void RealtimeSession::setImage(const std::optional<ImageInput>& image, const Upd
   impl_->signaling->setImageData(base64, prompt, enhance, options.timeout);
 }
 
+void RealtimeSession::mute() {
+  // Local track operation — allowed in any live state (including Reconnecting),
+  // so a transient media blip doesn't reject a warmup unmute when the user hits
+  // Start. Only a fully disconnected session is rejected.
+  if (impl_->media.state() == ConnectionState::Disconnected) {
+    throw Exception(Error{ErrorCode::NotConnected, "Realtime session is not connected"});
+  }
+  impl_->media.mute();
+}
+
+void RealtimeSession::unmute() {
+  if (impl_->media.state() == ConnectionState::Disconnected) {
+    throw Exception(Error{ErrorCode::NotConnected, "Realtime session is not connected"});
+  }
+  impl_->media.unmute();
+}
+
 bool RealtimeSession::isConnected() const noexcept { return impl_->media.isConnected(); }
 ConnectionState RealtimeSession::connectionState() const noexcept { return impl_->media.state(); }
 
@@ -447,7 +507,7 @@ std::unique_ptr<RealtimeSession> connectRealtime(std::shared_ptr<ClientConfig> c
       impl->signaling->sendPrompt(initial.prompt->text, initial.prompt->enhance, kPromptTimeout);
     }
 
-    impl->media.connectRoom(info, source, options.model.fps);
+    impl->media.connectRoom(info, source, options.model.fps, options.startMuted);
 
     // With no explicit initial state, a passthrough set_image kicks off generation.
     if (!hasInitialState) {
