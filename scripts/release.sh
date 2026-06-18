@@ -49,11 +49,14 @@ fi
 
 echo "Releasing v$new (was v$current)"
 
-# Bump the single source of truth; version.h is generated from it at build time.
+# Bump the version. CMakeLists.txt is the single source of truth (version.h is
+# generated from it at build time); keep vcpkg.json's manifest version in lockstep
+# so it can't drift from the release tag.
 sed -i.bak -E "s/^([[:space:]]*VERSION[[:space:]]+)[0-9]+\.[0-9]+\.[0-9]+/\1$new/" CMakeLists.txt
-rm -f CMakeLists.txt.bak
+sed -i.bak -E "s/(\"version\"[[:space:]]*:[[:space:]]*\")[0-9]+\.[0-9]+\.[0-9]+(\")/\1$new\2/" vcpkg.json
+rm -f CMakeLists.txt.bak vcpkg.json.bak
 
-git add CMakeLists.txt
+git add CMakeLists.txt vcpkg.json
 git commit -m "chore: release v$new"
 git tag -a "v$new" -m "decart-cpp v$new"
 
