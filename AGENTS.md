@@ -8,6 +8,15 @@
 - `./scripts/format.sh` / `clang-format -i` — format (`.clang-format`, 110 cols, Google base)
 - Auth/tokens-only build (no LiveKit): `cmake -B build -S . -DDECART_BUILD_REALTIME=OFF`
   (compiles out `Client::realtime()` via the `DECART_NO_REALTIME` interface define)
+- Release: `scripts/release.sh X.Y.Z` (from `main`) bumps the version, tags, and
+  pushes; the Release workflow publishes the GitHub release on the tag.
+
+## Versioning
+
+The version lives in exactly one place — `project(decart VERSION ...)` in the
+top-level CMakeLists.txt. `<decart/version.h>` is generated from `version.h.in`
+via `configure_file`, so it can't drift from the release tag. Never hand-edit a
+version number anywhere else.
 
 ## Architecture
 
