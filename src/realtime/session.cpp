@@ -82,6 +82,42 @@ std::string resolveImageBase64(const std::string& image) {
   return image;
 }
 
+InitialStateAckRequest buildInitialStateRequest(const InitialState& initial) {
+  const std::optional<std::string> initialPrompt =
+      initial.prompt.has_value() ? std::optional<std::string>(initial.prompt->text) : std::nullopt;
+  const std::optional<bool> initialEnhance =
+      initial.prompt.has_value() ? std::optional<bool>(initial.prompt->enhance) : std::nullopt;
+
+  if (initial.image.has_value()) {
+    if (initial.image->ref.has_value()) {
+      return InitialStateAckRequest{
+          makeSetImageRefMsg(*initial.image->ref, initialPrompt, initialEnhance),
+          [](const IncomingMessage& m) { return m.type == IncomingType::SetImageAck; }, kUpdateTimeout,
+          "Image send"};
+    }
+    if (initial.image->image.has_value()) {
+      return InitialStateAckRequest{
+          makeSetImageDataMsg(resolveImageBase64(*initial.image->image), initialPrompt, initialEnhance),
+          [](const IncomingMessage& m) { return m.type == IncomingType::SetImageAck; }, kUpdateTimeout,
+          "Image send"};
+    }
+  }
+
+  if (initial.prompt.has_value()) {
+    const std::string text = initial.prompt->text;
+    return InitialStateAckRequest{
+        makePromptMsg(text, initial.prompt->enhance),
+        [text](const IncomingMessage& m) { return m.type == IncomingType::PromptAck && m.prompt == text; },
+        kPromptTimeout, "Prompt send"};
+  }
+
+  // Match the JS SDK bootstrap: publish a null image with the join so the
+  // backend can start passthrough/generation without a post-publish gate.
+  return InitialStateAckRequest{makeSetImageDataMsg(std::nullopt, std::nullopt, std::nullopt),
+                                [](const IncomingMessage& m) { return m.type == IncomingType::SetImageAck; },
+                                kUpdateTimeout, "Image send"};
+}
+
 } // namespace
 
 /// Shared media half of a session: owns the LiveKit room, maps its events to the
@@ -472,6 +508,9 @@ std::unique_ptr<RealtimeSession> connectRealtime(std::shared_ptr<ClientConfig> c
   callbacks.onServerError = [cb = options.onError](const std::string& message) {
     if (cb) cb(Error{ErrorCode::ServerError, message});
   };
+  callbacks.onInitialStateError = [cb = options.onError](const std::string& message) {
+    if (cb) cb(Error{ErrorCode::ServerError, message});
+  };
   // An unexpected signaling drop after connect means control is dead: reflect it
   // in the connection state so isConnected() stops returning true, then notify.
   callbacks.onClosed = [impl, cb = options.onError](int code, const std::string& reason) {
@@ -483,36 +522,13 @@ std::unique_ptr<RealtimeSession> connectRealtime(std::shared_ptr<ClientConfig> c
   impl->signaling->setCallbacks(std::move(callbacks));
 
   try {
-    const RoomInfo info = impl->signaling->openAndJoin(options.connectTimeout);
-
-    // Initial reference image / prompt rides ahead of the media connect so the
-    // model has it before the first frame (mirrors the python SDK ordering).
-    bool hasInitialState = false;
-    const auto& initial = options.initialState;
-    const std::optional<std::string> initialPrompt =
-        initial.prompt.has_value() ? std::optional<std::string>(initial.prompt->text) : std::nullopt;
-    const std::optional<bool> initialEnhance =
-        initial.prompt.has_value() ? std::optional<bool>(initial.prompt->enhance) : std::nullopt;
-
-    if (initial.image.has_value()) {
-      hasInitialState = true;
-      if (initial.image->ref.has_value()) {
-        impl->signaling->setImageRef(*initial.image->ref, initialPrompt, initialEnhance, kUpdateTimeout);
-      } else if (initial.image->image.has_value()) {
-        impl->signaling->setImageData(resolveImageBase64(*initial.image->image), initialPrompt,
-                                      initialEnhance, kUpdateTimeout);
-      }
-    } else if (initial.prompt.has_value()) {
-      hasInitialState = true;
-      impl->signaling->sendPrompt(initial.prompt->text, initial.prompt->enhance, kPromptTimeout);
-    }
+    // Initial reference image / prompt rides inside livekit_join. Its ack is
+    // observed asynchronously by SignalingChannel, so track publishing is no
+    // longer gated on the prompt/image ack.
+    InitialStateAckRequest initialState = buildInitialStateRequest(options.initialState);
+    const RoomInfo info = impl->signaling->openAndJoin(options.connectTimeout, std::move(initialState));
 
     impl->media.connectRoom(info, source, options.model.fps, options.startMuted);
-
-    // With no explicit initial state, a passthrough set_image kicks off generation.
-    if (!hasInitialState) {
-      impl->signaling->setImageData(std::nullopt, std::nullopt, std::nullopt, kUpdateTimeout);
-    }
 
     impl->setSessionId(info.sessionId);
     impl->media.setState(ConnectionState::Connected);
