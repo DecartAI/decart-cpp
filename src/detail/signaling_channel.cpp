@@ -30,7 +30,8 @@ void SignalingChannel::setCallbacks(Callbacks callbacks) { callbacks_ = std::mov
 
 bool SignalingChannel::isOpen() const { return open_; }
 
-RoomInfo SignalingChannel::openAndJoin(std::chrono::milliseconds connectTimeout) {
+RoomInfo SignalingChannel::openAndJoin(std::chrono::milliseconds connectTimeout,
+                                       std::optional<InitialStateAckRequest> initialState) {
   // Single deadline shared across socket-open and room-join phases.
   const auto deadline = std::chrono::steady_clock::now() + connectTimeout;
   const std::string finalUrl = appendQuery(url_, "user_agent", userAgent_);
@@ -80,14 +81,25 @@ RoomInfo SignalingChannel::openAndJoin(std::chrono::milliseconds connectTimeout)
     // fresh connectTimeout so queue waiting does not count against the bound.
     handshakeWindow_ = connectTimeout;
     handshakeDeadline_ = deadline;
+    if (initialState.has_value()) {
+      initialAck_ =
+          InitialAckWatch{std::move(initialState->matchAck), (std::chrono::steady_clock::time_point::max)(),
+                          std::move(initialState->label)};
+    }
   }
-  if (!sendText(makeJoinMsg(std::nullopt).dump())) {
+  const std::optional<nlohmann::json> initialMessage =
+      initialState.has_value() ? std::optional<nlohmann::json>(std::move(initialState->message))
+                               : std::nullopt;
+  if (!sendText(makeJoinMsg(initialMessage).dump())) {
     std::lock_guard<std::mutex> lk(mutex_);
     waiters_.erase(std::remove(waiters_.begin(), waiters_.end(), waiter), waiters_.end());
+    initialAck_.reset();
     throw Exception(Error{ErrorCode::WebsocketError, "Failed to send join"});
   }
 
   // 3. Wait for room_info; queue_position pushes the deadline out.
+  RoomInfo roomInfo;
+  bool shouldStartInitialAckTimer = false;
   {
     std::unique_lock<std::mutex> lk(mutex_);
     while (!waiter->ready && !fatalError_) {
@@ -97,12 +109,24 @@ RoomInfo SignalingChannel::openAndJoin(std::chrono::milliseconds connectTimeout)
       }
     }
     waiters_.erase(std::remove(waiters_.begin(), waiters_.end(), waiter), waiters_.end());
-    if (fatalError_) throw Exception(Error{ErrorCode::ServerError, *fatalError_});
-    if (!waiter->ready) throw Exception(Error{ErrorCode::TimeoutError, "livekit_room_info timeout"});
+    if (fatalError_) {
+      initialAck_.reset();
+      throw Exception(Error{ErrorCode::ServerError, *fatalError_});
+    }
+    if (!waiter->ready) {
+      initialAck_.reset();
+      throw Exception(Error{ErrorCode::TimeoutError, "livekit_room_info timeout"});
+    }
     connected_ = true;
-    return RoomInfo{waiter->result.livekitUrl, waiter->result.token, waiter->result.roomName,
-                    waiter->result.sessionId};
+    if (initialAck_.has_value()) {
+      initialAck_->deadline = std::chrono::steady_clock::now() + initialState->timeout;
+      shouldStartInitialAckTimer = true;
+    }
+    roomInfo = RoomInfo{waiter->result.livekitUrl, waiter->result.token, waiter->result.roomName,
+                        waiter->result.sessionId};
   }
+  if (shouldStartInitialAckTimer) startInitialAckTimer();
+  return roomInfo;
 }
 
 IncomingMessage SignalingChannel::request(const nlohmann::json& message,
@@ -110,6 +134,23 @@ IncomingMessage SignalingChannel::request(const nlohmann::json& message,
                                           std::chrono::milliseconds timeout, const char* label) {
   // One ack-bearing request in flight at a time (see requestMutex_).
   std::lock_guard<std::mutex> serialize(requestMutex_);
+
+  std::optional<std::string> initialStateError;
+  {
+    std::unique_lock<std::mutex> lk(mutex_);
+    while (initialAck_.has_value() && !fatalError_) {
+      if (cv_.wait_until(lk, initialAck_->deadline) == std::cv_status::timeout &&
+          std::chrono::steady_clock::now() >= initialAck_->deadline) {
+        initialStateError = initialAck_->label + " timed out";
+        initialAck_.reset();
+        cv_.notify_all();
+        break;
+      }
+    }
+  }
+  if (initialStateError.has_value() && callbacks_.onInitialStateError) {
+    callbacks_.onInitialStateError(*initialStateError);
+  }
 
   auto waiter = std::make_shared<Waiter>();
   waiter->match = std::move(match);
@@ -168,6 +209,29 @@ void SignalingChannel::onMessage(const std::string& text) {
   const IncomingMessage m = parseIncoming(text);
   if (m.type == IncomingType::Unknown) return;
 
+  if (m.type == IncomingType::PromptAck || m.type == IncomingType::SetImageAck) {
+    std::optional<std::string> initialStateError;
+    bool handledInitialAck = false;
+    {
+      std::lock_guard<std::mutex> lk(mutex_);
+      if (initialAck_.has_value() && initialAck_->match(m)) {
+        const std::string label = initialAck_->label;
+        initialAck_.reset();
+        cv_.notify_all();
+        handledInitialAck = true;
+        if (!m.success) {
+          initialStateError = m.error.value_or(label + " failed");
+        }
+      }
+    }
+    if (handledInitialAck) {
+      if (initialStateError.has_value() && callbacks_.onInitialStateError) {
+        callbacks_.onInitialStateError(*initialStateError);
+      }
+      return;
+    }
+  }
+
   // Acks and room_info are consumed by their waiters; everything else is an event.
   {
     std::lock_guard<std::mutex> lk(mutex_);
@@ -180,6 +244,8 @@ void SignalingChannel::onMessage(const std::string& text) {
       }
     }
   }
+
+  if (m.type == IncomingType::PromptAck || m.type == IncomingType::SetImageAck) return;
 
   switch (m.type) {
     case IncomingType::QueuePosition: {
@@ -238,16 +304,54 @@ void SignalingChannel::onSocketError(const std::string& reason) {
   cv_.notify_all();
 }
 
+void SignalingChannel::startInitialAckTimer() {
+  joinInitialAckTimer();
+  initialAckTimer_ = std::thread([this] {
+    std::optional<std::string> initialStateError;
+    {
+      std::unique_lock<std::mutex> lk(mutex_);
+      while (initialAck_.has_value() && !fatalError_ && !closing_) {
+        if (cv_.wait_until(lk, initialAck_->deadline) == std::cv_status::timeout &&
+            std::chrono::steady_clock::now() >= initialAck_->deadline) {
+          initialStateError = initialAck_->label + " timed out";
+          initialAck_.reset();
+          cv_.notify_all();
+          break;
+        }
+      }
+    }
+    if (initialStateError.has_value() && callbacks_.onInitialStateError) {
+      callbacks_.onInitialStateError(*initialStateError);
+    }
+  });
+}
+
+void SignalingChannel::joinInitialAckTimer() {
+  if (!initialAckTimer_.joinable()) return;
+  if (initialAckTimer_.get_id() == std::this_thread::get_id()) {
+    initialAckTimer_.detach();
+    return;
+  }
+  initialAckTimer_.join();
+}
+
 bool SignalingChannel::sendText(const std::string& text) {
   if (!ws_) return false;
   return ws_->sendText(text).success;
 }
 
 void SignalingChannel::close() {
+  bool alreadyClosed = false;
   {
     std::lock_guard<std::mutex> lk(mutex_);
-    if (closing_ && !ws_) return;
+    alreadyClosed = closing_ && !ws_;
     closing_ = true;
+    initialAck_.reset();
+    cv_.notify_all();
+  }
+  if (alreadyClosed) {
+    joinInitialAckTimer();
+    return;
   }
   // stop() joins the WS thread; must not hold the lock (the Close callback locks).
   if (ws_) ws_->stop();
@@ -257,6 +361,7 @@ void SignalingChannel::close() {
     if (!fatalError_) fatalError_ = "Signaling channel closed";
     cv_.notify_all();
   }
+  joinInitialAckTimer();
 }
 
 } // namespace decart::detail
