@@ -1,5 +1,9 @@
 # Copyright 2026 Decart. SPDX-License-Identifier: MIT
 
+if(MSVC)
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS) # std::getenv in examples
+endif()
+
 # Auth/tokens example builds in every configuration.
 add_executable(create_token create_token.cpp)
 target_link_libraries(create_token PRIVATE decart::decart)

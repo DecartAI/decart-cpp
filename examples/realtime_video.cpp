@@ -21,6 +21,12 @@
 #include <thread>
 #include <vector>
 
+// MSVC spells the POSIX pipe functions with a leading underscore.
+#ifdef _WIN32
+#define popen _popen
+#define pclose _pclose
+#endif
+
 namespace {
 
 FILE* openDecodePipe(const std::string& input, int w, int h, int fps) {

@@ -129,6 +129,12 @@ target_link_libraries(decart PRIVATE $<BUILD_INTERFACE:nlohmann_json::nlohmann_j
 # IXWebSocket powers both the tokens HTTP client and realtime signaling.
 target_link_libraries(decart PRIVATE ${DECART_IXWEBSOCKET})
 
+if(WIN32)
+  # IXWebSocket's TLS backend (mbedtls) needs Windows CNG for entropy
+  # (BCryptGenRandom). PUBLIC so it resolves at the final link of consumers.
+  target_link_libraries(decart PUBLIC bcrypt)
+endif()
+
 if(DECART_BUILD_REALTIME)
   # LiveKit is PUBLIC: consumers create livekit::VideoSource / receive livekit::VideoFrame.
   target_link_libraries(decart PUBLIC ${DECART_LIVEKIT})
@@ -139,6 +145,7 @@ endif()
 
 if(MSVC)
   target_compile_options(decart PRIVATE /W4)
+  target_compile_definitions(decart PRIVATE _CRT_SECURE_NO_WARNINGS)
 else()
   target_compile_options(decart PRIVATE -Wall -Wextra -Wpedantic)
 endif()
