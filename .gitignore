@@ -1,0 +1,25 @@
+# Build output
+/build/
+build-*/
+cmake-build-*/
+out/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+_deps/
+*.cmake.user
+
+# vcpkg
+vcpkg_installed/
+
+# Editor / OS
+.vscode/
+.idea/
+.cache/
+compile_commands.json
+.DS_Store
+
+# Workspace
+.context/

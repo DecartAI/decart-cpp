@@ -1,0 +1,17 @@
+---
+# Pragmatic checks for the SDK. Third-party headers (LiveKit, IXWebSocket,
+# nlohmann) are excluded via HeaderFilterRegex.
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  modernize-use-override,
+  modernize-use-nullptr,
+  modernize-use-using,
+  readability-redundant-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*/(include|src)/decart/.*|.*/src/detail/.*|.*/src/realtime/.*'
+FormatStyle: file

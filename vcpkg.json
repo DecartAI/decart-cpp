@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "decart-cpp",
+  "version": "0.1.0",
+  "description": "Decart C++ SDK — realtime video transformation and auth",
+  "homepage": "https://github.com/DecartAI/decart-cpp",
+  "license": "MIT",
+  "supports": "windows | linux | osx",
+  "dependencies": [
+    "nlohmann-json",
+    {
+      "name": "ixwebsocket",
+      "features": ["ssl"]
+    }
+  ],
+  "features": {
+    "tests": {
+      "description": "Build unit tests",
+      "dependencies": ["doctest"]
+    }
+  }
+}
