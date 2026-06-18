@@ -115,9 +115,17 @@ endif()
 add_library(decart ${DECART_SOURCES})
 add_library(decart::decart ALIAS decart)
 
+# Single source of truth for the version: the project() VERSION above. Generate
+# <decart/version.h> from it so headers can never drift from the release tag.
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/decart/version.h.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/generated/decart/version.h"
+  @ONLY)
+
 target_include_directories(decart
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
     $<INSTALL_INTERFACE:include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -207,7 +215,11 @@ install(TARGETS decart
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# Public headers, excluding the .in template (the generated header is installed below).
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  PATTERN "*.in" EXCLUDE)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/generated/decart/version.h"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/decart)
 
 install(EXPORT decartTargets
   FILE decartTargets.cmake

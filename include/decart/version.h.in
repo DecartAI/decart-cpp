@@ -1,16 +1,19 @@
 // Copyright 2026 Decart. SPDX-License-Identifier: MIT
+//
+// Generated from version.h.in by CMake — do not edit. The version is the single
+// source of truth in the top-level CMakeLists.txt `project(... VERSION ...)`.
 #pragma once
 
 #include <string>
 
 /// Major version of the Decart C++ SDK.
-#define DECART_SDK_VERSION_MAJOR 0
+#define DECART_SDK_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 /// Minor version of the Decart C++ SDK.
-#define DECART_SDK_VERSION_MINOR 1
+#define DECART_SDK_VERSION_MINOR @PROJECT_VERSION_MINOR@
 /// Patch version of the Decart C++ SDK.
-#define DECART_SDK_VERSION_PATCH 0
+#define DECART_SDK_VERSION_PATCH @PROJECT_VERSION_PATCH@
 /// Full version string of the Decart C++ SDK.
-#define DECART_SDK_VERSION "0.1.0"
+#define DECART_SDK_VERSION "@PROJECT_VERSION@"
 
 namespace decart {
 
