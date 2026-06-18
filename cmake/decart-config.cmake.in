@@ -1,0 +1,15 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# decart links these as a static library; consumers of the installed package need
+# them discoverable on CMAKE_PREFIX_PATH (e.g. via vcpkg or the LiveKit release
+# prefix). nlohmann_json is header-only / build-time only, so it is not required.
+find_dependency(ixwebsocket)
+if("@DECART_BUILD_REALTIME@")
+  find_dependency(LiveKit)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/decartTargets.cmake")
+
+check_required_components(decart)
