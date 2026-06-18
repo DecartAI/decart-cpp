@@ -108,6 +108,32 @@ decode/encode):
 DECART_API_KEY=... ./realtime_video input.mp4 output.mp4 "put them all in space" lucy-2.1
 ```
 
+### Connection pre-warming
+
+Billing is tied to active generation — the seconds during which frames flow to
+the model. You can establish the authenticated session and WebRTC media path
+ahead of time and hold it idle at no cost by connecting with `startMuted = true`,
+then `unmute()` when the user is ready. This removes startup latency from the
+moment they hit Start. (An idle WebRTC track still emits keepalive frames, so
+muting — not merely withholding `captureFrame()` — is what keeps a warmed session
+unbilled.)
+
+```cpp
+decart::ConnectOptions options;
+options.model = model;
+options.initialState.prompt = decart::Prompt{"A watercolor painting", /*enhance=*/true};
+options.startMuted = true;                          // warm, but transmit nothing
+
+auto session = client.realtime().connect(source, options);  // authenticated, idle, unbilled
+// ... later, when the user clicks Start:
+session->unmute();                                  // generation (and billing) begins
+// source->captureFrame(myFrame);  // push frames from here on
+// If the user cancels first, session->disconnect() — no charge.
+```
+
+See [`examples/realtime_warmup.cpp`](examples/realtime_warmup.cpp) for a complete,
+runnable example.
+
 ### Authentication (client tokens)
 
 Create a short-lived token server-side to hand to an untrusted client:
