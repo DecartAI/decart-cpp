@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(decart
-  VERSION 0.2.0
+  VERSION 0.2.1
   DESCRIPTION "Decart C++ SDK — realtime video transformation and auth"
   HOMEPAGE_URL "https://github.com/DecartAI/decart-cpp"
   LANGUAGES CXX)
