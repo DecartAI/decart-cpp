@@ -23,7 +23,7 @@ TEST_CASE("realtime() accepts latest and deprecated aliases") {
   CHECK(models::realtime("lucy-latest").urlPath == "/v1/stream");
   CHECK(models::realtime("lucy-vton-latest").name == "lucy-vton-latest");
   CHECK(models::realtime("mirage_v2").width == 1280); // deprecated -> restyle geometry
-  CHECK(models::isRealtimeModel("lucy-vton"));
+  CHECK(models::isRealtimeModel("lucy-2.1-vton-2"));
 }
 
 TEST_CASE("realtime() throws ModelNotFound for unknown names") {
@@ -41,6 +41,6 @@ TEST_CASE("realtime() throws ModelNotFound for unknown names") {
 TEST_CASE("listRealtime() honors canonicalOnly") {
   auto all = models::listRealtime(/*canonicalOnly=*/false);
   auto canonical = models::listRealtime(/*canonicalOnly=*/true);
-  CHECK(canonical.size() == 5);
+  CHECK(canonical.size() == 4);
   CHECK(all.size() > canonical.size());
 }
