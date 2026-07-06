@@ -13,26 +13,28 @@ constexpr const char* kStreamPath = "/v1/stream";
 
 struct Entry {
   const char* name;
+  int fps;
   int width;
   int height;
   bool canonical; // false for "latest"/deprecated aliases
 };
 
 // Realtime model registry. Kept in sync with the shared model list across the
-// Decart SDKs. All realtime models stream over `/v1/stream` at 30 fps.
-constexpr std::array<Entry, 9> kRealtime = {{
+// Decart SDKs. All realtime models stream over `/v1/stream`.
+constexpr std::array<Entry, 10> kRealtime = {{
     // Canonical
-    {"lucy-2.1", 1088, 624, true},
-    {"lucy-vton-2", 1088, 624, true},
-    {"lucy-vton-3", 1088, 624, true},
-    {"lucy-restyle-2", 1280, 704, true},
+    {"lucy-2.1", 30, 1088, 624, true},
+    {"lucy-2.5", 30, 1088, 624, true},
+    {"lucy-vton-2", 30, 1088, 624, true},
+    {"lucy-vton-3", 30, 1088, 624, true},
+    {"lucy-restyle-2", 30, 1280, 704, true},
     // Server-resolved "latest" aliases
-    {"lucy-latest", 1088, 624, false},
-    {"lucy-vton-latest", 1088, 624, false},
-    {"lucy-restyle-latest", 1280, 704, false},
+    {"lucy-latest", 30, 1088, 624, false},
+    {"lucy-vton-latest", 30, 1088, 624, false},
+    {"lucy-restyle-latest", 30, 1280, 704, false},
     // Deprecated aliases (still accepted)
-    {"mirage_v2", 1280, 704, false},
-    {"lucy-2.1-vton-2", 1088, 624, false},
+    {"mirage_v2", 30, 1280, 704, false},
+    {"lucy-2.1-vton-2", 30, 1088, 624, false},
 }};
 
 const Entry* find(std::string_view name) {
@@ -43,7 +45,7 @@ const Entry* find(std::string_view name) {
 }
 
 ModelDefinition toDefinition(const Entry& e) {
-  return ModelDefinition{e.name, kStreamPath, 30, e.width, e.height};
+  return ModelDefinition{e.name, kStreamPath, e.fps, e.width, e.height};
 }
 
 } // namespace
