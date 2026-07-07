@@ -24,7 +24,7 @@ struct Entry {
 constexpr std::array<Entry, 10> kRealtime = {{
     // Canonical
     {"lucy-2.1", 30, 1088, 624, true},
-    {"lucy-2.5", 30, 1088, 624, true},
+    {"lucy-2.5", 30, 1280, 720, true},
     {"lucy-vton-2", 30, 1088, 624, true},
     {"lucy-vton-3", 30, 1088, 624, true},
     {"lucy-restyle-2", 30, 1280, 704, true},
