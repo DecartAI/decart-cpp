@@ -22,8 +22,8 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
   CHECK(lucy25.name == "lucy-2.5");
   CHECK(lucy25.urlPath == "/v1/stream");
   CHECK(lucy25.fps == 30);
-  CHECK(lucy25.width == 1088);
-  CHECK(lucy25.height == 624);
+  CHECK(lucy25.width == 1280);
+  CHECK(lucy25.height == 720);
 }
 
 TEST_CASE("realtime() accepts latest and deprecated aliases") {
