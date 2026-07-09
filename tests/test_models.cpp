@@ -29,7 +29,6 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
 TEST_CASE("realtime() accepts latest and deprecated aliases") {
   CHECK(models::realtime("lucy-latest").urlPath == "/v1/stream");
   CHECK(models::realtime("lucy-vton-latest").name == "lucy-vton-latest");
-  CHECK(models::realtime("mirage_v2").width == 1280); // deprecated -> restyle geometry
   CHECK(models::isRealtimeModel("lucy-2.1-vton-2"));
 }
 

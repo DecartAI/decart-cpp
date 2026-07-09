@@ -21,7 +21,7 @@ struct Entry {
 
 // Realtime model registry. Kept in sync with the shared model list across the
 // Decart SDKs. All realtime models stream over `/v1/stream`.
-constexpr std::array<Entry, 10> kRealtime = {{
+constexpr std::array<Entry, 9> kRealtime = {{
     // Canonical
     {"lucy-2.1", 30, 1088, 624, true},
     {"lucy-2.5", 30, 1280, 720, true},
@@ -33,7 +33,6 @@ constexpr std::array<Entry, 10> kRealtime = {{
     {"lucy-vton-latest", 30, 1088, 624, false},
     {"lucy-restyle-latest", 30, 1280, 704, false},
     // Deprecated aliases (still accepted)
-    {"mirage_v2", 30, 1280, 704, false},
     {"lucy-2.1-vton-2", 30, 1088, 624, false},
 }};
 
