@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "decart-cpp",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Decart C++ SDK — realtime video transformation and auth",
   "homepage": "https://github.com/DecartAI/decart-cpp",
   "license": "MIT",
