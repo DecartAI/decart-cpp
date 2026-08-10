@@ -18,6 +18,13 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
   CHECK(vton.width == 1088);
   CHECK(vton.height == 624);
 
+  auto vton35 = models::realtime("lucy-vton-3.5");
+  CHECK(vton35.name == "lucy-vton-3.5");
+  CHECK(vton35.urlPath == "/v1/stream");
+  CHECK(vton35.fps == 30);
+  CHECK(vton35.width == 1280);
+  CHECK(vton35.height == 720);
+
   auto lucy25 = models::realtime("lucy-2.5");
   CHECK(lucy25.name == "lucy-2.5");
   CHECK(lucy25.urlPath == "/v1/stream");
@@ -29,6 +36,8 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
 TEST_CASE("realtime() accepts latest and deprecated aliases") {
   CHECK(models::realtime("lucy-latest").urlPath == "/v1/stream");
   CHECK(models::realtime("lucy-vton-latest").name == "lucy-vton-latest");
+  CHECK(models::realtime("lucy-vton-latest").width == 1280);
+  CHECK(models::realtime("lucy-vton-latest").height == 720);
   CHECK(models::isRealtimeModel("lucy-2.1-vton-2"));
 }
 
@@ -47,6 +56,6 @@ TEST_CASE("realtime() throws ModelNotFound for unknown names") {
 TEST_CASE("listRealtime() honors canonicalOnly") {
   auto all = models::listRealtime(/*canonicalOnly=*/false);
   auto canonical = models::listRealtime(/*canonicalOnly=*/true);
-  CHECK(canonical.size() == 5);
+  CHECK(canonical.size() == 6);
   CHECK(all.size() > canonical.size());
 }
