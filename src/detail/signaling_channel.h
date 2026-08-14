@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "realtime/messages.h"
@@ -27,6 +28,15 @@ struct RoomInfo {
   std::string sessionId;
 };
 
+/// Initial prompt/image bundled into `livekit_join.initial_state`. The ack is
+/// observed asynchronously so media publishing does not wait on it.
+struct InitialStateAckRequest {
+  nlohmann::json message;
+  std::function<bool(const IncomingMessage&)> matchAck;
+  std::chrono::milliseconds timeout;
+  std::string label;
+};
+
 /// The Decart realtime signaling channel: a WebSocket to `wss://api3.decart.ai`
 /// that performs the join handshake, carries prompt/image control messages
 /// (request/ack), and forwards server events. Media flows separately over
@@ -43,6 +53,8 @@ public:
     std::function<void(double seconds)> onGenerationTick;
     std::function<void(double seconds, const std::string& reason)> onGenerationEnded;
     std::function<void(const std::string& message)> onServerError;
+    /// Failed ack for the initial state bundled into `livekit_join`.
+    std::function<void(const std::string& message)> onInitialStateError;
     /// Unexpected close after a successful connect (code, reason).
     std::function<void(int code, const std::string& reason)> onClosed;
   };
@@ -61,7 +73,8 @@ public:
   /// `connectTimeout` is a single bound covering both phases (socket open + room
   /// join). `queue_position` messages refresh the deadline, so time spent waiting
   /// in the inference queue does not count against it. @throws on failure.
-  RoomInfo openAndJoin(std::chrono::milliseconds connectTimeout);
+  RoomInfo openAndJoin(std::chrono::milliseconds connectTimeout,
+                       std::optional<InitialStateAckRequest> initialState = std::nullopt);
 
   /// Send a prompt and block until acknowledged. @throws on failure/timeout.
   void sendPrompt(const std::string& text, bool enhance, std::chrono::milliseconds timeout);
@@ -86,9 +99,17 @@ private:
     bool ready = false;
   };
 
+  struct InitialAckWatch {
+    std::function<bool(const IncomingMessage&)> match;
+    std::chrono::steady_clock::time_point deadline;
+    std::string label;
+  };
+
   void onMessage(const std::string& text);
   void onClosed(int code, const std::string& reason);
   void onSocketError(const std::string& reason);
+  void startInitialAckTimer();
+  void joinInitialAckTimer();
 
   // Register `waiter`, send `message`, and block until matched or `timeout`.
   IncomingMessage request(const nlohmann::json& message, std::function<bool(const IncomingMessage&)> match,
@@ -114,6 +135,8 @@ private:
   bool connected_ = false; // room_info received (handshake complete)
   bool closing_ = false;
   std::optional<std::string> fatalError_;
+  std::optional<InitialAckWatch> initialAck_;
+  std::thread initialAckTimer_;
 
   // Handshake deadline, extendable when queue_position arrives.
   std::chrono::steady_clock::time_point handshakeDeadline_{};

@@ -40,6 +40,10 @@ TEST_CASE("makeJoinMsg embeds initial state or null") {
   auto withState = makeJoinMsg(makePromptMsg("hi", false));
   CHECK(withState["initial_state"]["type"] == "prompt");
   CHECK(withState["initial_state"]["prompt"] == "hi");
+
+  auto withBootstrap = makeJoinMsg(makeSetImageDataMsg(std::nullopt, std::nullopt, std::nullopt));
+  CHECK(withBootstrap["initial_state"]["type"] == "set_image");
+  CHECK(withBootstrap["initial_state"]["image_data"].is_null());
 }
 
 TEST_CASE("parseIncoming handles livekit_room_info") {
