@@ -24,6 +24,20 @@ enum class ConnectionState {
 /// Human-readable name for a ConnectionState (e.g. "generating").
 const char* toString(ConnectionState state) noexcept;
 
+/// Compute tier for a realtime session, requested via `ConnectOptions::speed`.
+/// Matches the `speed` option across the Decart SDKs.
+enum class Speed {
+  /// Fast mode: serves the session from a higher-compute tier for lower latency
+  /// and higher throughput; output quality is unchanged. Currently available
+  /// for `lucy-2.5` / `lucy-latest` and `lucy-vton-3.5` / `lucy-vton-latest`,
+  /// in the US region only, and billed at 2x the standard realtime rate for
+  /// those models. Other models ignore it.
+  Fast,
+};
+
+/// Wire value for a Speed (e.g. "fast"), as sent in the `speed` query parameter.
+const char* toString(Speed speed) noexcept;
+
 /// A text prompt plus whether the server should enhance it.
 struct Prompt {
   std::string text;

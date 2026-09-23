@@ -5,6 +5,8 @@
 #include <string_view>
 #include <vector>
 
+#include "decart/realtime/types.h"
+
 namespace decart {
 
 /// A realtime model definition: everything the SDK needs to open a session and
@@ -21,6 +23,10 @@ struct ModelDefinition {
   int width = 0;
   /// Recommended capture height in pixels.
   int height = 0;
+  /// Compute tiers this model accepts via `ConnectOptions::speed` (empty when the
+  /// model only offers the standard tier). Passing an unlisted speed is not an
+  /// error: the server ignores it and serves the standard tier.
+  std::vector<Speed> supportedSpeeds;
 };
 
 namespace models {

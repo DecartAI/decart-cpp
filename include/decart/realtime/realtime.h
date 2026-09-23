@@ -58,8 +58,18 @@ struct ConnectOptions {
   /// Optional prompt/image to apply during the handshake.
   InitialState initialState;
 
-  /// Optional output resolution hint ("720p" or "1080p").
+  /// Optional output resolution hint ("720p" or "1080p"). Omitted from the
+  /// request when unset.
   std::optional<std::string> resolution;
+
+  /// Optional compute tier. `Speed::Fast` serves the session from a
+  /// higher-compute tier for lower latency and higher throughput; output quality
+  /// is unchanged. Currently available for `lucy-2.5` / `lucy-latest` and
+  /// `lucy-vton-3.5` / `lucy-vton-latest` (see
+  /// `ModelDefinition::supportedSpeeds`), in the US region only, and billed at
+  /// 2x the standard realtime rate for those models. Other models ignore the
+  /// option (the SDK logs a warning). Leave unset (the default) for standard mode.
+  std::optional<Speed> speed;
 
   /// Publish the input track muted, so no frames reach the model until you call
   /// `RealtimeSession::unmute()`. Use this to pre-warm a connection: the session

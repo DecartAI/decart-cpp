@@ -17,7 +17,8 @@ set(DECART_TEST_SOURCES
   test_main.cpp
   test_models.cpp
   test_base64.cpp
-  test_enums.cpp)
+  test_enums.cpp
+  test_stream_url.cpp)
 
 # The signaling message codec only exists in realtime builds.
 if(DECART_BUILD_REALTIME)
@@ -27,7 +28,7 @@ endif()
 add_executable(decart_tests ${DECART_TEST_SOURCES})
 
 target_include_directories(decart_tests PRIVATE
-  ${CMAKE_SOURCE_DIR}/src) # internal headers under test (messages, base64)
+  ${CMAKE_SOURCE_DIR}/src) # internal headers under test (messages, base64, stream_url)
 
 target_link_libraries(decart_tests PRIVATE
   decart::decart
