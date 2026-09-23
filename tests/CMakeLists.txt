@@ -18,7 +18,8 @@ set(DECART_TEST_SOURCES
   test_models.cpp
   test_base64.cpp
   test_enums.cpp
-  test_stream_url.cpp)
+  test_stream_url.cpp
+  test_connect_options.cpp)
 
 # The signaling message codec only exists in realtime builds.
 if(DECART_BUILD_REALTIME)
