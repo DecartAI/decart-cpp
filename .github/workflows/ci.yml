@@ -20,6 +20,8 @@ jobs:
     env:
       # Used by cmake/LiveKitSDK.cmake to resolve & download the LiveKit release.
       GITHUB_TOKEN: ${{ github.token }}
+      # CI pin: upstream's "latest" LiveKit release currently has no assets; unpin when fixed upstream.
+      DECART_LIVEKIT_VERSION: "1.11.0"
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +37,8 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DDECART_BUILD_EXAMPLES=ON -DDECART_BUILD_TESTS=ON
+            -DDECART_BUILD_EXAMPLES=ON -DDECART_BUILD_TESTS=ON \
+            -DDECART_LIVEKIT_VERSION="$DECART_LIVEKIT_VERSION"
           cmake --build build
 
       - name: Configure & build (Windows, vcpkg)
@@ -45,7 +48,8 @@ jobs:
           cmake -B build -S . `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
             -DVCPKG_MANIFEST_FEATURES=tests `
-            -DDECART_BUILD_EXAMPLES=ON -DDECART_BUILD_TESTS=ON
+            -DDECART_BUILD_EXAMPLES=ON -DDECART_BUILD_TESTS=ON `
+            -DDECART_LIVEKIT_VERSION="$env:DECART_LIVEKIT_VERSION"
           cmake --build build --config Release
 
       - name: Test
