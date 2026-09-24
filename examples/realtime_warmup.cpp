@@ -8,6 +8,9 @@
 //
 //   DECART_API_KEY=sk-... ./realtime_warmup [model]
 //
+// Set DECART_SPEED=fast to request fast mode (lucy-2.5 / lucy-vton-3.5 families
+// only; US region; billed at 2x the standard realtime rate).
+//
 #include <decart/decart.h>
 #include <livekit/livekit.h>
 
@@ -36,6 +39,9 @@ int main(int argc, char** argv) {
     options.model = model;
     options.initialState.prompt = decart::Prompt{"A watercolor painting", true};
     options.startMuted = true; // warm the connection without transmitting (no billing)
+    if (const char* speed = std::getenv("DECART_SPEED"); speed != nullptr && std::string(speed) == "fast") {
+      options.speed = decart::Speed::Fast; // higher-compute tier: lower latency, 2x rate, US only
+    }
     options.onConnectionState = [](decart::ConnectionState state) {
       // Stays "connected" while warmed; flips to "generating" once frames flow.
       std::cout << "[state] " << decart::toString(state) << "\n";

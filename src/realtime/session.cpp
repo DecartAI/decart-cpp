@@ -19,7 +19,7 @@
 #include "detail/livekit_runtime.h"
 #include "detail/log.h"
 #include "detail/signaling_channel.h"
-#include "detail/url.h"
+#include "detail/stream_url.h"
 #include "detail/user_agent.h"
 #include "realtime/messages.h"
 #include "realtime/session_internal.h"
@@ -448,10 +448,12 @@ std::unique_ptr<RealtimeSession> connectRealtime(std::shared_ptr<ClientConfig> c
   impl->media.onError = options.onError;
   impl->media.setState(ConnectionState::Connecting);
 
-  std::string url = config->realtimeBaseUrl + options.model.urlPath;
-  url = appendQuery(url, "api_key", config->apiKey);
-  url = appendQuery(url, "model", options.model.name);
-  if (options.resolution.has_value()) url = appendQuery(url, "resolution", *options.resolution);
+  // Signaling is single-shot: this URL is built once per connect() and never
+  // rebuilt (no signaling reconnect), so per-session options such as `speed`
+  // only need to be applied here.
+  warnIfSpeedUnsupported(options.model, options.speed);
+  const std::string url = buildStreamUrl(config->realtimeBaseUrl, options.model, config->apiKey,
+                                         options.resolution, options.speed);
 
   impl->signaling = std::make_unique<SignalingChannel>(url, buildUserAgent(config->integration));
 

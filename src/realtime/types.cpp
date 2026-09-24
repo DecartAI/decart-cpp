@@ -19,4 +19,12 @@ const char* toString(ConnectionState state) noexcept {
   return "unknown";
 }
 
+const char* toString(Speed speed) noexcept {
+  switch (speed) {
+    case Speed::Fast:
+      return "fast";
+  }
+  return "unknown";
+}
+
 } // namespace decart

@@ -1,6 +1,10 @@
 // Copyright 2026 Decart. SPDX-License-Identifier: MIT
 #include <doctest/doctest.h>
 
+#include <set>
+#include <string>
+#include <vector>
+
 #include "decart/errors.h"
 #include "decart/models.h"
 
@@ -46,6 +50,36 @@ TEST_CASE("realtime() throws ModelNotFound for unknown names") {
     // toString() (which returns const char*) and cannot concatenate that.
     CHECK(static_cast<int>(e.code()) == static_cast<int>(ErrorCode::ModelNotFound));
   }
+}
+
+TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5 and lucy-vton-3.5 families") {
+  // Compare via integer form: doctest stringifies enums through our ADL
+  // toString() (which returns const char*) and cannot concatenate that.
+  const auto fastOnly = std::vector<int>{static_cast<int>(Speed::Fast)};
+  auto speeds = [](const ModelDefinition& m) {
+    std::vector<int> out;
+    for (auto s : m.supportedSpeeds) out.push_back(static_cast<int>(s));
+    return out;
+  };
+
+  CHECK(speeds(models::realtime("lucy-2.5")) == fastOnly);
+  CHECK(speeds(models::realtime("lucy-latest")) == fastOnly);
+  CHECK(speeds(models::realtime("lucy-vton-3.5")) == fastOnly);
+  CHECK(speeds(models::realtime("lucy-vton-latest")) == fastOnly);
+
+  const std::set<std::string> withFast = {"lucy-2.5", "lucy-latest", "lucy-vton-3.5", "lucy-vton-latest"};
+  for (const auto& m : models::listRealtime(/*canonicalOnly=*/false)) {
+    INFO("model " << m.name);
+    if (withFast.count(m.name)) {
+      CHECK(speeds(m) == fastOnly);
+    } else {
+      CHECK(m.supportedSpeeds.empty());
+    }
+  }
+  // Every other realtime model (lucy-2.1, lucy-restyle-2, lucy-restyle-latest) is standard-only.
+  CHECK(models::realtime("lucy-2.1").supportedSpeeds.empty());
+  CHECK(models::realtime("lucy-restyle-2").supportedSpeeds.empty());
+  CHECK(models::realtime("lucy-restyle-latest").supportedSpeeds.empty());
 }
 
 TEST_CASE("listRealtime() honors canonicalOnly") {

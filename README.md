@@ -134,6 +134,32 @@ session->unmute();                                  // generation (and billing) 
 See [`examples/realtime_warmup.cpp`](examples/realtime_warmup.cpp) for a complete,
 runnable example.
 
+### Connect options: resolution and speed
+
+`ConnectOptions` carries two optional per-session hints. Both are omitted from the
+request when unset, which selects the server defaults.
+
+- `resolution` (`std::optional<std::string>`): output resolution hint, `"720p"` or
+  `"1080p"`.
+- `speed` (`std::optional<decart::Speed>`): compute tier. Fast mode
+  (`decart::Speed::Fast`, sent as `speed=fast`) serves the session from a
+  higher-compute tier for lower latency and higher throughput; output quality is
+  unchanged. It is currently available for `lucy-2.5` / `lucy-latest` and
+  `lucy-vton-3.5` / `lucy-vton-latest`, in the US region only, and is billed at 2x
+  the standard realtime rate for those models. Other models ignore the option (the
+  SDK logs a warning). Omit it (the default) for standard mode.
+  `ModelDefinition::supportedSpeeds` lists the tiers a model advertises.
+
+```cpp
+decart::ConnectOptions options;
+options.model = decart::models::realtime("lucy-2.5");
+options.resolution = "1080p";           // optional output resolution hint
+options.speed = decart::Speed::Fast;    // optional fast mode (2x rate, US only)
+```
+
+See the [Decart platform docs](https://docs.platform.decart.ai) for current model
+availability and pricing.
+
 ### Authentication (client tokens)
 
 Create a short-lived token server-side to hand to an untrusted client:

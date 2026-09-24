@@ -22,6 +22,8 @@ TEST_CASE("ConnectionState names match the other SDKs") {
   CHECK(std::string(toString(ConnectionState::Reconnecting)) == "reconnecting");
 }
 
+TEST_CASE("Speed wire values match the other SDKs") { CHECK(std::string(toString(Speed::Fast)) == "fast"); }
+
 TEST_CASE("ImageInput factory helpers set the right field") {
   auto p = ImageInput::fromPath("/tmp/a.png");
   CHECK(p.image.has_value());

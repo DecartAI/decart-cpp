@@ -16,7 +16,8 @@ struct Entry {
   int fps;
   int width;
   int height;
-  bool canonical; // false for "latest"/deprecated aliases
+  bool canonical;         // false for "latest"/deprecated aliases
+  bool fastSpeed = false; // accepts `speed=fast` (see ModelDefinition::supportedSpeeds)
 };
 
 // Realtime model registry. Kept in sync with the shared model list across the
@@ -24,13 +25,13 @@ struct Entry {
 constexpr std::array<Entry, 7> kRealtime = {{
     // Canonical
     {"lucy-2.1", 30, 1088, 624, true},
-    {"lucy-2.5", 30, 1280, 720, true},
-    {"lucy-vton-3.5", 30, 1280, 720, true},
+    {"lucy-2.5", 30, 1280, 720, true, /*fastSpeed=*/true},
+    {"lucy-vton-3.5", 30, 1280, 720, true, /*fastSpeed=*/true},
     {"lucy-restyle-2", 30, 1280, 704, true},
     // Server-resolved "latest" aliases
-    {"lucy-latest", 30, 1088, 624, false},
+    {"lucy-latest", 30, 1088, 624, false, /*fastSpeed=*/true},
     // Resolves server-side to lucy-vton-3.5.
-    {"lucy-vton-latest", 30, 1280, 720, false},
+    {"lucy-vton-latest", 30, 1280, 720, false, /*fastSpeed=*/true},
     {"lucy-restyle-latest", 30, 1280, 704, false},
 }};
 
@@ -42,7 +43,9 @@ const Entry* find(std::string_view name) {
 }
 
 ModelDefinition toDefinition(const Entry& e) {
-  return ModelDefinition{e.name, kStreamPath, e.fps, e.width, e.height};
+  ModelDefinition def{e.name, kStreamPath, e.fps, e.width, e.height, /*supportedSpeeds=*/{}};
+  if (e.fastSpeed) def.supportedSpeeds.push_back(Speed::Fast);
+  return def;
 }
 
 } // namespace
