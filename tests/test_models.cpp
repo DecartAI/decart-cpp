@@ -25,6 +25,15 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
   CHECK(vton35.width == 1280);
   CHECK(vton35.height == 720);
 
+  auto vton36 = models::realtime("lucy-vton-3.6");
+  CHECK(vton36.name == "lucy-vton-3.6");
+  CHECK(vton36.urlPath == "/v1/stream");
+  CHECK(vton36.fps == 30);
+  CHECK(vton36.width == 1280);
+  CHECK(vton36.height == 720);
+  // 3.6 is not offered on the fast tier, unlike 3.5.
+  CHECK(vton36.supportedSpeeds.empty());
+
   auto lucy25 = models::realtime("lucy-2.5");
   CHECK(lucy25.name == "lucy-2.5");
   CHECK(lucy25.urlPath == "/v1/stream");
@@ -76,8 +85,10 @@ TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5 and lucy
       CHECK(m.supportedSpeeds.empty());
     }
   }
-  // Every other realtime model (lucy-2.1, lucy-restyle-2, lucy-restyle-latest) is standard-only.
+  // Every other realtime model (lucy-2.1, lucy-vton-3.6, lucy-restyle-2, lucy-restyle-latest)
+  // is standard-only.
   CHECK(models::realtime("lucy-2.1").supportedSpeeds.empty());
+  CHECK(models::realtime("lucy-vton-3.6").supportedSpeeds.empty());
   CHECK(models::realtime("lucy-restyle-2").supportedSpeeds.empty());
   CHECK(models::realtime("lucy-restyle-latest").supportedSpeeds.empty());
 }
@@ -85,6 +96,6 @@ TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5 and lucy
 TEST_CASE("listRealtime() honors canonicalOnly") {
   auto all = models::listRealtime(/*canonicalOnly=*/false);
   auto canonical = models::listRealtime(/*canonicalOnly=*/true);
-  CHECK(canonical.size() == 4);
+  CHECK(canonical.size() == 5);
   CHECK(all.size() > canonical.size());
 }
