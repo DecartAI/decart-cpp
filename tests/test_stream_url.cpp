@@ -86,6 +86,7 @@ TEST_CASE("supportsSpeed reflects ModelDefinition::supportedSpeeds") {
   CHECK(supportsSpeed(models::realtime("lucy-2.5"), Speed::Fast));
   CHECK(supportsSpeed(models::realtime("lucy-latest"), Speed::Fast));
   CHECK(supportsSpeed(models::realtime("lucy-vton-3.5"), Speed::Fast));
+  CHECK(supportsSpeed(models::realtime("lucy-vton-3.6"), Speed::Fast));
   CHECK(supportsSpeed(models::realtime("lucy-vton-latest"), Speed::Fast));
   CHECK_FALSE(supportsSpeed(models::realtime("lucy-2.1"), Speed::Fast));
   CHECK_FALSE(supportsSpeed(models::realtime("lucy-restyle-2"), Speed::Fast));
