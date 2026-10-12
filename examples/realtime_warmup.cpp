@@ -8,8 +8,9 @@
 //
 //   DECART_API_KEY=sk-... ./realtime_warmup [model]
 //
-// Set DECART_SPEED=fast to request fast mode (lucy-2.5 / lucy-vton-3.5 families
-// only; US region; billed at 2x the standard realtime rate).
+// Set DECART_SPEED=fast to request fast mode (lucy-2.5 family and
+// lucy-vton-3.5 / lucy-vton-3.6 / lucy-vton-latest only; US region; billed at
+// 2x the standard realtime rate).
 //
 #include <decart/decart.h>
 #include <livekit/livekit.h>
