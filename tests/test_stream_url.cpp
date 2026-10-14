@@ -13,7 +13,7 @@ using namespace decart::detail;
 
 namespace {
 
-const std::string kBase = "wss://api3.decart.ai";
+const std::string kBase = "wss://api.decart.ai";
 const std::string kKey = "sk-test";
 
 std::size_t count(const std::string& haystack, const std::string& needle) {
@@ -39,7 +39,7 @@ struct LogCapture {
 TEST_CASE("buildStreamUrl without options is unchanged and carries no speed param") {
   const auto model = models::realtime("lucy-2.5");
   const auto url = buildStreamUrl(kBase, model, kKey, std::nullopt, std::nullopt);
-  CHECK(url == "wss://api3.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5");
+  CHECK(url == "wss://api.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5");
   CHECK(url.find("speed") == std::string::npos);
   CHECK(url.find("resolution") == std::string::npos);
 }
@@ -47,7 +47,7 @@ TEST_CASE("buildStreamUrl without options is unchanged and carries no speed para
 TEST_CASE("buildStreamUrl appends resolution after model") {
   const auto model = models::realtime("lucy-2.5");
   const auto url = buildStreamUrl(kBase, model, kKey, std::string("1080p"), std::nullopt);
-  CHECK(url == "wss://api3.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5&resolution=1080p");
+  CHECK(url == "wss://api.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5&resolution=1080p");
 }
 
 TEST_CASE("buildStreamUrl appends speed=fast exactly once, after resolution") {
@@ -55,20 +55,20 @@ TEST_CASE("buildStreamUrl appends speed=fast exactly once, after resolution") {
 
   SUBCASE("speed only") {
     const auto url = buildStreamUrl(kBase, model, kKey, std::nullopt, Speed::Fast);
-    CHECK(url == "wss://api3.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5&speed=fast");
+    CHECK(url == "wss://api.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5&speed=fast");
     CHECK(count(url, "speed=") == 1);
   }
 
   SUBCASE("speed with resolution") {
     const auto url = buildStreamUrl(kBase, model, kKey, std::string("720p"), Speed::Fast);
-    CHECK(url == "wss://api3.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5&resolution=720p&speed=fast");
+    CHECK(url == "wss://api.decart.ai/v1/stream?api_key=sk-test&model=lucy-2.5&resolution=720p&speed=fast");
     CHECK(count(url, "speed=") == 1);
   }
 
   SUBCASE("still sent for models without the capability (server ignores it)") {
     const auto restyle = models::realtime("lucy-restyle-2");
     const auto url = buildStreamUrl(kBase, restyle, kKey, std::nullopt, Speed::Fast);
-    CHECK(url == "wss://api3.decart.ai/v1/stream?api_key=sk-test&model=lucy-restyle-2&speed=fast");
+    CHECK(url == "wss://api.decart.ai/v1/stream?api_key=sk-test&model=lucy-restyle-2&speed=fast");
   }
 }
 

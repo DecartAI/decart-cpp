@@ -179,7 +179,7 @@ auto token = client.tokens().create(opts);
 decart::ClientOptions options;
 options.apiKey = "sk-...";                  // or set DECART_API_KEY
 options.baseUrl = "https://api.decart.ai";  // HTTP API (tokens)
-options.realtimeBaseUrl = "wss://api3.decart.ai"; // signaling
+options.realtimeBaseUrl = "wss://api.decart.ai"; // signaling
 options.integration = "my-app";             // included in the User-Agent
 decart::Client client(options);
 ```
