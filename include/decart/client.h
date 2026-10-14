@@ -18,7 +18,7 @@ struct ClientOptions {
   std::string apiKey;
   /// Override the HTTP API base URL (default "https://api.decart.ai").
   std::string baseUrl;
-  /// Override the realtime signaling base URL (default "wss://api3.decart.ai").
+  /// Override the realtime signaling base URL (default "wss://api.decart.ai").
   std::string realtimeBaseUrl;
   /// Optional integration identifier, included in the User-Agent.
   std::string integration;

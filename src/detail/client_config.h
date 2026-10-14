@@ -10,7 +10,7 @@ namespace decart::detail {
 struct ClientConfig {
   std::string apiKey;
   std::string baseUrl;         // e.g. "https://api.decart.ai"
-  std::string realtimeBaseUrl; // e.g. "wss://api3.decart.ai"
+  std::string realtimeBaseUrl; // e.g. "wss://api.decart.ai"
   std::string integration;
 };
 

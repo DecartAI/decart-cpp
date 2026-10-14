@@ -27,7 +27,7 @@ struct RoomInfo {
   std::string sessionId;
 };
 
-/// The Decart realtime signaling channel: a WebSocket to `wss://api3.decart.ai`
+/// The Decart realtime signaling channel: a WebSocket to `wss://api.decart.ai`
 /// that performs the join handshake, carries prompt/image control messages
 /// (request/ack), and forwards server events. Media flows separately over
 /// LiveKit. See [[decart-realtime-wire-protocol]].

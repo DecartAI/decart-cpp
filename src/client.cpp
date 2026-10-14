@@ -50,7 +50,7 @@ Client::Client(ClientOptions options) : impl_(std::make_unique<Impl>()) {
   }
 
   std::string realtimeBaseUrl =
-      options.realtimeBaseUrl.empty() ? "wss://api3.decart.ai" : options.realtimeBaseUrl;
+      options.realtimeBaseUrl.empty() ? "wss://api.decart.ai" : options.realtimeBaseUrl;
   if (!startsWith(realtimeBaseUrl, "ws://") && !startsWith(realtimeBaseUrl, "wss://")) {
     throw Exception(Error{ErrorCode::InvalidBaseUrl,
                           "Invalid realtime base URL (must be ws:// or wss://): " + realtimeBaseUrl});
