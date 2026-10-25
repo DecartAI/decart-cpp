@@ -33,7 +33,7 @@ namespace models {
 
 /// Resolve a realtime model by name.
 ///
-/// Accepts canonical names ("lucy-2.1", "lucy-2.5", "lucy-vton-3.5",
+/// Accepts canonical names ("lucy-2.1", "lucy-2.5", "lucy-2.6", "lucy-vton-3.5",
 /// "lucy-vton-3.6", "lucy-restyle-2") and server-resolved aliases
 /// ("lucy-latest", "lucy-vton-latest", "lucy-restyle-latest"). Aliases are
 /// resolved by the server; e.g. "lucy-vton-latest" currently serves

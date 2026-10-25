@@ -41,6 +41,16 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
   CHECK(lucy25.fps == 30);
   CHECK(lucy25.width == 1280);
   CHECK(lucy25.height == 720);
+
+  auto lucy26 = models::realtime("lucy-2.6");
+  CHECK(lucy26.name == "lucy-2.6");
+  CHECK(lucy26.urlPath == "/v1/stream");
+  CHECK(lucy26.fps == 30);
+  CHECK(lucy26.width == 1280);
+  CHECK(lucy26.height == 720);
+  // 2.6 is offered on the fast tier, like 2.5.
+  REQUIRE(lucy26.supportedSpeeds.size() == 1);
+  CHECK(static_cast<int>(lucy26.supportedSpeeds[0]) == static_cast<int>(Speed::Fast));
 }
 
 TEST_CASE("realtime() accepts latest aliases (lucy-vton-latest resolves server-side to lucy-vton-3.6)") {
@@ -69,7 +79,7 @@ TEST_CASE("realtime() throws ModelNotFound for unknown names") {
   }
 }
 
-TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5 and lucy-vton-3.5/3.6 families") {
+TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5/2.6 and lucy-vton-3.5/3.6 families") {
   // Compare via integer form: doctest stringifies enums through our ADL
   // toString() (which returns const char*) and cannot concatenate that.
   const auto fastOnly = std::vector<int>{static_cast<int>(Speed::Fast)};
@@ -80,13 +90,14 @@ TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5 and lucy
   };
 
   CHECK(speeds(models::realtime("lucy-2.5")) == fastOnly);
+  CHECK(speeds(models::realtime("lucy-2.6")) == fastOnly);
   CHECK(speeds(models::realtime("lucy-latest")) == fastOnly);
   CHECK(speeds(models::realtime("lucy-vton-3.5")) == fastOnly);
   CHECK(speeds(models::realtime("lucy-vton-3.6")) == fastOnly);
   CHECK(speeds(models::realtime("lucy-vton-latest")) == fastOnly);
 
-  const std::set<std::string> withFast = {"lucy-2.5", "lucy-latest", "lucy-vton-3.5", "lucy-vton-3.6",
-                                          "lucy-vton-latest"};
+  const std::set<std::string> withFast = {"lucy-2.5",      "lucy-2.6",      "lucy-latest",
+                                          "lucy-vton-3.5", "lucy-vton-3.6", "lucy-vton-latest"};
   for (const auto& m : models::listRealtime(/*canonicalOnly=*/false)) {
     INFO("model " << m.name);
     if (withFast.count(m.name)) {
@@ -105,6 +116,6 @@ TEST_CASE("supportedSpeeds advertises fast mode on exactly the lucy-2.5 and lucy
 TEST_CASE("listRealtime() honors canonicalOnly") {
   auto all = models::listRealtime(/*canonicalOnly=*/false);
   auto canonical = models::listRealtime(/*canonicalOnly=*/true);
-  CHECK(canonical.size() == 5);
+  CHECK(canonical.size() == 6);
   CHECK(all.size() > canonical.size());
 }

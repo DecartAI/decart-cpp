@@ -84,6 +84,7 @@ TEST_CASE("buildStreamUrl is deterministic: rebuilding yields the same speed par
 
 TEST_CASE("supportsSpeed reflects ModelDefinition::supportedSpeeds") {
   CHECK(supportsSpeed(models::realtime("lucy-2.5"), Speed::Fast));
+  CHECK(supportsSpeed(models::realtime("lucy-2.6"), Speed::Fast));
   CHECK(supportsSpeed(models::realtime("lucy-latest"), Speed::Fast));
   CHECK(supportsSpeed(models::realtime("lucy-vton-3.5"), Speed::Fast));
   CHECK(supportsSpeed(models::realtime("lucy-vton-3.6"), Speed::Fast));
