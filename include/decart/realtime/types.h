@@ -29,9 +29,9 @@ const char* toString(ConnectionState state) noexcept;
 enum class Speed {
   /// Fast mode: serves the session from a higher-compute tier for lower latency
   /// and higher throughput; output quality is unchanged. Currently available
-  /// for `lucy-2.5` / `lucy-latest` and `lucy-vton-3.5` / `lucy-vton-3.6` /
-  /// `lucy-vton-latest`, in the US region only, and billed at 2x the standard realtime rate for
-  /// those models. Other models ignore it.
+  /// for `lucy-2.5` / `lucy-2.6` / `lucy-latest` and `lucy-vton-3.5` /
+  /// `lucy-vton-3.6` / `lucy-vton-latest`, in the US region only, and billed at
+  /// 2x the standard realtime rate for those models. Other models ignore it.
   Fast,
 };
 
