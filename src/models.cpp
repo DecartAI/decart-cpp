@@ -31,7 +31,7 @@ constexpr std::array<Entry, 9> kRealtime = {{
     {"lucy-vton-3.6", 30, 1280, 720, true, /*fastSpeed=*/true},
     {"lucy-restyle-2", 30, 1280, 704, true},
     // Server-resolved "latest" aliases
-    {"lucy-latest", 30, 1088, 624, false, /*fastSpeed=*/true},
+    {"lucy-latest", 30, 1280, 720, false, /*fastSpeed=*/true},
     // Resolves server-side to lucy-vton-3.6.
     {"lucy-vton-latest", 30, 1280, 720, false, /*fastSpeed=*/true},
     {"lucy-restyle-latest", 30, 1280, 704, false},

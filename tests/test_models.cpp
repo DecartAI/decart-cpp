@@ -55,6 +55,8 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
 
 TEST_CASE("realtime() accepts latest aliases (lucy-vton-latest resolves server-side to lucy-vton-3.6)") {
   CHECK(models::realtime("lucy-latest").urlPath == "/v1/stream");
+  CHECK(models::realtime("lucy-latest").width == 1280);
+  CHECK(models::realtime("lucy-latest").height == 720);
   CHECK(models::realtime("lucy-vton-latest").name == "lucy-vton-latest");
   CHECK(models::realtime("lucy-vton-latest").width == 1280);
   CHECK(models::realtime("lucy-vton-latest").height == 720);
