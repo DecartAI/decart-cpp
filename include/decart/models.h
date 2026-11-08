@@ -36,8 +36,8 @@ namespace models {
 /// Accepts canonical names ("lucy-2.1", "lucy-2.5", "lucy-2.6", "lucy-vton-3.5",
 /// "lucy-vton-3.6", "lucy-restyle-2") and server-resolved aliases
 /// ("lucy-latest", "lucy-vton-latest", "lucy-restyle-latest"). Aliases are
-/// resolved by the server; e.g. "lucy-vton-latest" currently serves
-/// "lucy-vton-3.6".
+/// resolved by the server; e.g. "lucy-latest" currently serves "lucy-2.6" and
+/// "lucy-vton-latest" currently serves "lucy-vton-3.6".
 ///
 /// @throws Exception(ErrorCode::ModelNotFound) if the name is unknown.
 ModelDefinition realtime(std::string_view name);
