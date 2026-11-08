@@ -53,8 +53,14 @@ TEST_CASE("realtime() resolves canonical models with correct geometry") {
   CHECK(static_cast<int>(lucy26.supportedSpeeds[0]) == static_cast<int>(Speed::Fast));
 }
 
-TEST_CASE("realtime() accepts latest aliases (lucy-vton-latest resolves server-side to lucy-vton-3.6)") {
+TEST_CASE("realtime() accepts latest aliases (lucy-latest -> lucy-2.6, lucy-vton-latest -> lucy-vton-3.6)") {
   CHECK(models::realtime("lucy-latest").urlPath == "/v1/stream");
+  // lucy-latest resolves server-side to lucy-2.6; capture at the shape it serves.
+  const auto lucyLatest = models::realtime("lucy-latest");
+  const auto lucy26 = models::realtime("lucy-2.6");
+  CHECK(lucyLatest.fps == lucy26.fps);
+  CHECK(lucyLatest.width == lucy26.width);
+  CHECK(lucyLatest.height == lucy26.height);
   CHECK(models::realtime("lucy-vton-latest").name == "lucy-vton-latest");
   CHECK(models::realtime("lucy-vton-latest").width == 1280);
   CHECK(models::realtime("lucy-vton-latest").height == 720);
